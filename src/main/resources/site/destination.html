@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>mysql replication web console</title>
+    <link href="css/bootstrap.css" rel="stylesheet">
+
+    <style>
+        body {
+            padding: 20px;
+        }
+
+    </style>
+
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+</head>
+
+<body>
+
+<form>
+    <fieldset>
+        <legend>Basic Config</legend>
+        <label>Destination Name</label>
+        <input id="destination" name="destination" type="text" placeholder="destination1">
+        <label>MySQL Address</label>
+        <input id="dbAddress" name="dbAddress" type="text" placeholder="localhost">
+        <label>MySQL User</label>
+        <input id="dbUser" name="dbUser" type="text" placeholder="canal">
+        <label>MySQL Password</label>
+        <input id="dbPassword" type="text" placeholder="canal">
+
+    </fieldset>
+
+    <fieldset>
+        <legend>Config Table</legend>
+        <label>
+            <button id="add-table" type="button">Add Table</button>
+        </label>
+        <table class="table table-bordered">
+            <thead>
+            <tr>
+                <th style="width: 100px;">Table Name</th>
+                <th style="width: 100px;">Redis Host</th>
+                <th style="width: 100px;">Redis Host</th>
+                <th style="width: 100px;">Redis Password</th>
+                <th style="width: 100px;">Queue Topics</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody id="table-config">
+
+            </tbody>
+
+        </table>
+    </fieldset>
+    <button id="save-btn" type="button">SAVE|UPDATE</button>
+    <button id="test-btn" type="button">TEST SCRIPT</button>
+</form>
+<script type="text/javascript">
+
+    function deleteTableConfig(e) {
+
+        if (confirm("Sure delete")) {
+            $(e).parent().parent().remove()
+        }
+    }
+
+    function getQueryString(paramName) {
+
+        paramName = paramName.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]").toLowerCase();
+
+        var reg = "[\\?&]" + paramName + "=([^&#]*)";
+
+        var regex = new RegExp(reg);
+
+        var regResults = regex.exec(window.location.href);
+
+        if (regResults == null)    return "";
+
+        else    return regResults [1];
+
+    }
+
+    var tableConfigHTML = '<tr>' +
+            '<td ><input name="tableName" type="text" placeholder="table name" value="#tableName"></td>' +
+            '<td ><input name="redisHost" type="text" placeholder="Redis Host" value="#redisHost"></td>' +
+            '<td><input name="redisPort" type="text" placeholder="Redis Port" value="#redisPort"></td>' +
+            '<td><input name="redisPassword" type="text" placeholder="Redis Password" value="#redisPassword"></td>' +
+            '<td><input name="topics" type="text" placeholder="Queue Topics" value="#topics"></td>' +
+            '<td><button type="button" onclick="deleteTableConfig(this)" >DELETE</button> </td>' +
+            '</tr>';
+
+    $(function () {
+
+        var destination = getQueryString("destination");
+        if (destination) {
+
+            $.get("config/get?destination=" + destination, function (data) {
+                console.log(data)
+                $("#destination").val(data.destination)
+                $("#dbAddress").val(data.dbAddress)
+                $("#dbUser").val(data.dbUser)
+                $("#dbPassword").val(data.dbPassword)
+
+                $(data.tableConfigs).each(function () {
+                    $("#table-config").append($(tableConfigHTML.replace("#tableName", this.tableName).replace("#redisHost", this.redisHost).replace("#redisPort", this.redisPort).replace("#redisPassword", this.redisPassword).replace("#topics", this.topics.join(" "))))
+                })
+
+
+            }, "json")
+        }
+
+        $("#add-table").click(function () {
+            $("#table-config").append($(tableConfigHTML.replace("#tableName", "").replace("#redisHost", "").replace("#redisPort", "").replace("#redisPassword", "").replace("#topics", "")))
+        })
+
+        function getData() {
+            var destination = $("#destination").val()
+            if (destination.length == 0) {
+                alert("require destination")
+                return
+            }
+            var dbAddress = $("#dbAddress").val()
+            if (dbAddress.length == 0) {
+                alert("require dbAddress")
+                return
+            }
+            var dbUser = $("#dbUser").val()
+            if (dbUser.length == 0) {
+                alert("require dbUser")
+                return
+            }
+            var dbPassword = $("#dbPassword").val()
+            if (dbPassword.length == 0) {
+                alert("require dbPassword")
+                return
+            }
+
+
+            var tableConfigs = []
+            var err = ""
+            var hasTableConfig = false;
+
+            $("#table-config tr").each(function () {
+
+                hasTableConfig = true
+                if (err != "") {
+                    return
+                }
+                var tableName = $("input[name=tableName]", this).val().trim()
+                var redisHost = $("input[name=redisHost]", this).val().trim()
+                var redisPort = $("input[name=redisPort]", this).val().trim()
+                var redisPassword = $("input[name=redisPassword]", this).val().trim()
+                var topics = $("input[name=topics]", this).val().trim()
+
+                if (tableName.length == 0) {
+                    err += "Table Name is empty."
+                }
+
+                if (redisHost.length == 0) {
+                    err += "Redis Host is empty."
+                }
+
+                if (redisPort.length == 0) {
+                    err += "Redis Port is empty."
+                }
+
+                if (redisPassword.length == 0) {
+                    err += "Redis Password is empty."
+                }
+
+                if (topics.length == 0) {
+                    err += "Topics is empty."
+                }
+
+                tableConfigs.push({
+                    tableName: tableName,
+                    redisHost: redisHost,
+                    redisPort: redisPort,
+                    redisPassword:redisPassword,
+                    topics:topics.split(/\s+/)
+                })
+
+            })
+
+            if (!hasTableConfig) {
+                alert("Must has table config.");
+                return;
+            }
+
+            if (err != "") {
+                alert(err)
+                return
+            }
+            return {
+                destination: destination,
+                dbAddress: dbAddress,
+                dbUser: dbUser,
+                dbPassword: dbPassword,
+                tableConfigs: tableConfigs
+
+            }
+        }
+
+
+        $("#save-btn").click(function () {
+
+            var conf = getData()
+            if (!conf) {
+                return
+            }
+
+            var saveBtn = $("#save-btn").attr("disabled", "disabled")
+
+            $.post("config/save", {
+                json: JSON.stringify(conf)
+            }, function (data) {
+                alert(data)
+                saveBtn.removeAttr("disabled")
+                if (data == "ok") {
+                    document.location.href = "index.html"
+                }
+            })
+
+
+        })
+
+        $("#test-btn").click(function () {
+
+            var conf = getData()
+            if (!conf) {
+                return
+            }
+
+            $.post("config/test", {
+                json: JSON.stringify(conf)
+
+            }, function (data) {
+                alert(data)
+
+            })
+        })
+    })
+
+
+</script>
+
+
+</body>
+
+</html>
