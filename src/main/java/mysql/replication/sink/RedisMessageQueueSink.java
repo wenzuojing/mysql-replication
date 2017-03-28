@@ -62,6 +62,7 @@ public class RedisMessageQueueSink extends AbstractSink {
                 }
 
                 JSONObject jsonObject = new JSONObject();
+                jsonObject.put("tableName" , tableConfig.getTableName()) ;
                 jsonObject.put("event" , "insert") ;
                 jsonObject.put("rowList" , rowList );
                 byte[] bytes = jsonObject.toJSONString().getBytes(Charsets.UTF_8);
@@ -97,6 +98,7 @@ public class RedisMessageQueueSink extends AbstractSink {
                 }
 
                 JSONObject jsonObject = new JSONObject();
+                jsonObject.put("tableName" , tableConfig.getTableName()) ;
                 jsonObject.put("event" , "update") ;
                 jsonObject.put("rowList" , rowList );
                 byte[] bytes = jsonObject.toJSONString().getBytes(Charsets.UTF_8);
@@ -122,6 +124,7 @@ public class RedisMessageQueueSink extends AbstractSink {
                 }
 
                 JSONObject jsonObject = new JSONObject();
+                jsonObject.put("tableName" , tableConfig.getTableName()) ;
                 jsonObject.put("event" , "delete") ;
                 jsonObject.put("rowList" , rowList );
                 byte[] bytes = jsonObject.toJSONString().getBytes(Charsets.UTF_8);
