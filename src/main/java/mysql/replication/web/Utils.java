@@ -47,9 +47,7 @@ public class Utils {
                     jsonObject.put("rowList" , Arrays.asList(row));
                     byte[] bytes = jsonObject.toJSONString().getBytes(Charsets.UTF_8);
                     RedisMessageQueue redisMessageQueue = RedisUtils.createRedisMessageQueue(tableConfig.getRedisHost(), tableConfig.getRedisPort(),tableConfig.getRedisPassword());
-                    for(String topic :tableConfig.getTopics() ){
-                        redisMessageQueue.publish(topic , bytes);
-                    }
+                    redisMessageQueue.publish(tableConfig.getTopic() ,bytes );
                     redisMessageQueue.close();
                     sb.append(tableConfig.getTableName() + " is  ok\r\n");
                 }

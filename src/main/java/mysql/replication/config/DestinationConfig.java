@@ -89,7 +89,7 @@ public class DestinationConfig implements Serializable {
 
         private String tableName;
 
-        private List<String> topics ;
+        private String topic ;
 
         private String redisHost;
 
@@ -105,12 +105,12 @@ public class DestinationConfig implements Serializable {
             this.tableName = tableName;
         }
 
-        public List<String> getTopics() {
-            return topics;
+        public String getTopic() {
+            return topic;
         }
 
-        public void setTopics(List<String> topics) {
-            this.topics = topics;
+        public void setTopic(String topic) {
+            this.topic = topic;
         }
 
         public String getRedisHost() {

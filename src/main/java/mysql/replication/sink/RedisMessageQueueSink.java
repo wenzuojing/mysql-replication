@@ -66,9 +66,7 @@ public class RedisMessageQueueSink extends AbstractSink {
                 jsonObject.put("event" , "insert") ;
                 jsonObject.put("rowList" , rowList );
                 byte[] bytes = jsonObject.toJSONString().getBytes(Charsets.UTF_8);
-                for(String topic :tableConfig.getTopics() ){
-                    redisMessageQueue.publish(topic ,bytes );
-                }
+                redisMessageQueue.publish(tableConfig.getTopic() ,bytes );
 
 
             }
@@ -102,9 +100,7 @@ public class RedisMessageQueueSink extends AbstractSink {
                 jsonObject.put("event" , "update") ;
                 jsonObject.put("rowList" , rowList );
                 byte[] bytes = jsonObject.toJSONString().getBytes(Charsets.UTF_8);
-                for(String topic :tableConfig.getTopics() ){
-                    redisMessageQueue.publish(topic ,bytes );
-                }
+                redisMessageQueue.publish(tableConfig.getTopic() ,bytes );
             }
 
             @Override
@@ -128,9 +124,7 @@ public class RedisMessageQueueSink extends AbstractSink {
                 jsonObject.put("event" , "delete") ;
                 jsonObject.put("rowList" , rowList );
                 byte[] bytes = jsonObject.toJSONString().getBytes(Charsets.UTF_8);
-                for(String topic :tableConfig.getTopics() ){
-                    redisMessageQueue.publish(topic ,bytes );
-                }
+                redisMessageQueue.publish(tableConfig.getTopic() ,bytes );
             }
 
             @Override

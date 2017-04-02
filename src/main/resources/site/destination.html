@@ -43,7 +43,7 @@
                 <th style="width: 100px;">Redis Host</th>
                 <th style="width: 100px;">Redis Host</th>
                 <th style="width: 100px;">Redis Password</th>
-                <th style="width: 100px;">Queue Topics</th>
+                <th style="width: 100px;">Queue Topic</th>
                 <th></th>
             </tr>
             </thead>
@@ -86,7 +86,7 @@
             '<td ><input name="redisHost" type="text" placeholder="Redis Host" value="#redisHost"></td>' +
             '<td><input name="redisPort" type="text" placeholder="Redis Port" value="#redisPort"></td>' +
             '<td><input name="redisPassword" type="text" placeholder="Redis Password" value="#redisPassword"></td>' +
-            '<td><input name="topics" type="text" placeholder="Queue Topics" value="#topics"></td>' +
+            '<td><input name="topic" type="text" placeholder="Queue Topic" value="#topic"></td>' +
             '<td><button type="button" onclick="deleteTableConfig(this)" >DELETE</button> </td>' +
             '</tr>';
 
@@ -103,7 +103,7 @@
                 $("#dbPassword").val(data.dbPassword)
 
                 $(data.tableConfigs).each(function () {
-                    $("#table-config").append($(tableConfigHTML.replace("#tableName", this.tableName).replace("#redisHost", this.redisHost).replace("#redisPort", this.redisPort).replace("#redisPassword", this.redisPassword).replace("#topics", this.topics.join(" "))))
+                    $("#table-config").append($(tableConfigHTML.replace("#tableName", this.tableName).replace("#redisHost", this.redisHost).replace("#redisPort", this.redisPort).replace("#redisPassword", this.redisPassword).replace("#topic", this.topic)))
                 })
 
 
@@ -111,7 +111,7 @@
         }
 
         $("#add-table").click(function () {
-            $("#table-config").append($(tableConfigHTML.replace("#tableName", "").replace("#redisHost", "").replace("#redisPort", "").replace("#redisPassword", "").replace("#topics", "")))
+            $("#table-config").append($(tableConfigHTML.replace("#tableName", "").replace("#redisHost", "").replace("#redisPort", "").replace("#redisPassword", "").replace("#topic", "")))
         })
 
         function getData() {
@@ -151,7 +151,7 @@
                 var redisHost = $("input[name=redisHost]", this).val().trim()
                 var redisPort = $("input[name=redisPort]", this).val().trim()
                 var redisPassword = $("input[name=redisPassword]", this).val().trim()
-                var topics = $("input[name=topics]", this).val().trim()
+                var topic = $("input[name=topic]", this).val().trim()
 
                 if (tableName.length == 0) {
                     err += "Table Name is empty."
@@ -169,8 +169,8 @@
                     err += "Redis Password is empty."
                 }
 
-                if (topics.length == 0) {
-                    err += "Topics is empty."
+                if (topic.length == 0) {
+                    err += "Topic is empty."
                 }
 
                 tableConfigs.push({
@@ -178,7 +178,7 @@
                     redisHost: redisHost,
                     redisPort: redisPort,
                     redisPassword:redisPassword,
-                    topics:topics.split(/\s+/)
+                    topic:topic
                 })
 
             })
