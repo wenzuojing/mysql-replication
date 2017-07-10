@@ -1,5 +1,7 @@
 #! /bin/sh
 
+source /etc/profile
+
 if [ -z "$JAVA_HOME" ] ; then
 	export JAVA_HOME=/usr/local/java
 fi
