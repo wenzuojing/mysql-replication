@@ -5,6 +5,7 @@ import com.alibaba.otter.canal.protocol.CanalEntry;
 import com.github.wens.mq.RedisMessageQueue;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import mysql.replication.LoggerFactory;
 import mysql.replication.canal.AbstractSink;
 import mysql.replication.config.DestinationConfig;
@@ -15,6 +16,7 @@ import org.slf4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 
 /**
@@ -76,6 +78,7 @@ public class RedisMessageQueueSink extends AbstractSink {
             protected void handleUpdate(List<CanalEntry.RowData> rowDatasList) {
 
                 List<Map<String, String>> rowList  = new ArrayList<>(rowDatasList.size()) ;
+                Set<String> updateColumns = Sets.newHashSet();
                 for (CanalEntry.RowData rowData : rowDatasList) {
                     List<CanalEntry.Column> afterColumnsList = rowData.getAfterColumnsList();
                     if (logger.isDebugEnabled()) {
@@ -83,11 +86,14 @@ public class RedisMessageQueueSink extends AbstractSink {
                     }
                     boolean drop = true;
                     Map<String, String> row = Maps.newHashMap();
+
                     for (CanalEntry.Column c : afterColumnsList) {
 
                         if (c.getUpdated()) {
+                            updateColumns.add(c.getName());
                             drop = false;
                         }
+
                         row.put(c.getName(), c.getValue());
                     }
                     if (!drop) {
@@ -99,6 +105,7 @@ public class RedisMessageQueueSink extends AbstractSink {
                 jsonObject.put("tableName" , tableConfig.getTableName()) ;
                 jsonObject.put("event" , "update") ;
                 jsonObject.put("rowList" , rowList );
+                jsonObject.put("updateColumns" , updateColumns );
                 byte[] bytes = jsonObject.toJSONString().getBytes(Charsets.UTF_8);
                 redisMessageQueue.publish(tableConfig.getTopic() ,bytes );
             }
