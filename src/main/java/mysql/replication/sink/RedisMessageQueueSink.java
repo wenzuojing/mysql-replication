@@ -124,6 +124,7 @@ public class RedisMessageQueueSink extends AbstractSink {
                             row.put(c.getName(), c.getValue());
                         }
                     }
+                    rowList.add(row);
                 }
 
                 JSONObject jsonObject = new JSONObject();
