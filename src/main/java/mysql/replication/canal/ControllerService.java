@@ -12,7 +12,7 @@ import mysql.replication.LoggerFactory;
 import mysql.replication.ZookeeperUtils;
 import mysql.replication.config.DestinationConfig;
 import mysql.replication.config.DestinationConfigManager;
-import mysql.replication.sink.RedisMessageQueueSink;
+import mysql.replication.sink.RocketMqSink;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -79,7 +79,7 @@ public class ControllerService {
             task.safeStop();
         }
         server.start(destination);
-        MessagePuller puller = new MessagePuller(conf.getCanalBatchSize(), destination, server, new RedisMessageQueueSink(destinationConfig), scheduledExecutorService);
+        MessagePuller puller = new MessagePuller(conf.getCanalBatchSize(), destination, server, new RocketMqSink(destinationConfig), scheduledExecutorService);
         puller.start();
         runningTasks.put(destination, puller);
         logger.info("## Started destination task:" + destinationConfig.getDestination());
@@ -152,7 +152,7 @@ public class ControllerService {
         parameter.setDbUsername(destinationConfig.getDbUser());
         parameter.setDbPassword(destinationConfig.getDbPassword());
 
-        parameter.setSlaveId(1688L);
+        parameter.setSlaveId(1888L);
 
         parameter.setDefaultConnectionTimeoutInSeconds(30);
         parameter.setConnectionCharset("UTF-8");

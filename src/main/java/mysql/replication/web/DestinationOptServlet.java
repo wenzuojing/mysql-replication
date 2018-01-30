@@ -1,6 +1,5 @@
 package mysql.replication.web;
 
-import mysql.replication.CoordinatorController;
 import mysql.replication.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -17,12 +16,8 @@ public class DestinationOptServlet extends HttpServlet {
 
     private final Logger logger = LoggerFactory.getLogger();
 
-    private CoordinatorController coordinatorController;
 
 
-    public DestinationOptServlet(CoordinatorController coordinatorController) {
-        this.coordinatorController = coordinatorController;
-    }
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {

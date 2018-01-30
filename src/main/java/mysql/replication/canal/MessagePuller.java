@@ -42,8 +42,14 @@ public class MessagePuller extends Thread implements Lifecycle {
         this.clientIdentity = new ClientIdentity(destination, (short) 1);
 
         setName("puller-" + this.destination + "-thread");
+
     }
 
+    @Override
+    public synchronized void start() {
+        super.start();
+        this.writer.start();
+    }
 
     public void safeStop() {
 

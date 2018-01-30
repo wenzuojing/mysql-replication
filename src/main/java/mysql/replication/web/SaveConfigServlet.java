@@ -32,7 +32,6 @@ public class SaveConfigServlet extends HttpServlet {
             if (old != null) {
                 destinationConfig.setStopped(old.isStopped());
                 destinationConfig.setRunFail(old.isRunFail());
-                destinationConfig.setRunOn(old.getRunOn());
             }
 
             destinationConfigManager.saveOrUpdate(destinationConfig);

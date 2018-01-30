@@ -20,7 +20,6 @@ public class Bootstrap {
             Conf conf = Conf.getInstance();
             ZookeeperUtils.init(conf);
             final DestinationConfigManager destinationConfigManager = new DestinationConfigManager();
-            final CoordinatorController coordinatorController = new CoordinatorController(destinationConfigManager, conf.getId(), conf.getHttpEndpoin());
             final ControllerService controllerService = new ControllerService(conf);
             controllerService.setDestinationConfigManager(destinationConfigManager);
             final WebConsole webConsole = new WebConsole(conf, controllerService, destinationConfigManager, coordinatorController);
@@ -29,14 +28,12 @@ public class Bootstrap {
 
             logger.info("## start the controller service success.");
             webConsole.start();
-            coordinatorController.start();
             Runtime.getRuntime().addShutdownHook(new Thread() {
 
                 public void run() {
                     try {
                         webConsole.stop();
                         controllerService.stop();
-                        coordinatorController.stop();
                         logger.info("## stop the controller service success");
                     } catch (Throwable e) {
                         logger.warn("##something goes wrong when stopping canal Server:\n{}",

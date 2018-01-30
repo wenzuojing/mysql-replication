@@ -16,9 +16,8 @@ public class DestinationConfig implements Serializable {
 
     private String dbPassword;
 
-    private String runOn;
+    private String mqNamesrvAddr ;
 
-    private boolean runFail;
 
     private List<TableConfig> tableConfigs;
 
@@ -61,6 +60,14 @@ public class DestinationConfig implements Serializable {
         this.dbPassword = dbPassword;
     }
 
+    public String getMqNamesrvAddr() {
+        return mqNamesrvAddr;
+    }
+
+    public void setMqNamesrvAddr(String mqNamesrvAddr) {
+        this.mqNamesrvAddr = mqNamesrvAddr;
+    }
+
     public boolean isStopped() {
         return stopped;
     }
@@ -68,22 +75,7 @@ public class DestinationConfig implements Serializable {
     public void setStopped(boolean stopped) {
         this.stopped = stopped;
     }
-
-    public String getRunOn() {
-        return runOn;
-    }
-
-    public void setRunOn(String runOn) {
-        this.runOn = runOn;
-    }
-
-    public boolean isRunFail() {
-        return runFail;
-    }
-
-    public void setRunFail(boolean runFail) {
-        this.runFail = runFail;
-    }
+    
 
     public static class TableConfig {
 
@@ -91,11 +83,6 @@ public class DestinationConfig implements Serializable {
 
         private String topic ;
 
-        private String redisHost;
-
-        private String redisPassword;
-
-        private Integer redisPort ;
 
         public String getTableName() {
             return tableName;
@@ -113,29 +100,6 @@ public class DestinationConfig implements Serializable {
             this.topic = topic;
         }
 
-        public String getRedisHost() {
-            return redisHost;
-        }
-
-        public void setRedisHost(String redisHost) {
-            this.redisHost = redisHost;
-        }
-
-        public String getRedisPassword() {
-            return redisPassword;
-        }
-
-        public void setRedisPassword(String redisPassword) {
-            this.redisPassword = redisPassword;
-        }
-
-        public Integer getRedisPort() {
-            return redisPort;
-        }
-
-        public void setRedisPort(Integer redisPort) {
-            this.redisPort = redisPort;
-        }
     }
 
     public void setTableConfigs(List<TableConfig> tableConfigs) {

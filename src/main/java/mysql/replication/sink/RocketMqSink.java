@@ -2,7 +2,6 @@ package mysql.replication.sink;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.otter.canal.protocol.CanalEntry;
-import com.github.wens.mq.RedisMessageQueue;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -10,7 +9,9 @@ import mysql.replication.LoggerFactory;
 import mysql.replication.canal.AbstractSink;
 import mysql.replication.config.DestinationConfig;
 
-import mysql.replication.redis.RedisUtils;
+import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.producer.DefaultMQProducer;
+import org.apache.rocketmq.common.message.Message;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -22,29 +23,49 @@ import java.util.Set;
 /**
  * Created by wens on 15-12-3.
  */
-public class RedisMessageQueueSink extends AbstractSink {
+public class RocketMqSink extends AbstractSink {
 
     private final static Logger logger = LoggerFactory.getLogger();
 
 
+    private DefaultMQProducer producer ;
 
 
-    public RedisMessageQueueSink(DestinationConfig destinationConfig ) {
+    public RocketMqSink(DestinationConfig destinationConfig ) {
         super(destinationConfig);
     }
 
     @Override
     public void start() {
+        producer = new DefaultMQProducer("mysql-binlog");
+        producer.setNamesrvAddr(this.destinationConfig.getMqNamesrvAddr());
+        producer.setRetryTimesWhenSendFailed(10);
+        try {
+            producer.start();
+        } catch (MQClientException e) {
+            throw new RuntimeException("Start rocket mq fail", e );
+        }
 
     }
 
     @Override
+    public void stop() {
+        super.stop();
+        producer.shutdown();
+    }
+
+    @Override
     protected AbstractSink.SinkWorker createSinkWorker(DestinationConfig.TableConfig tableConfig) {
+
+
+
         return new AbstractSink.SinkWorker(tableConfig) {
 
+            @Override
+            public void start() {
+                super.start();
 
-            private  RedisMessageQueue redisMessageQueue = RedisUtils.createRedisMessageQueue(tableConfig.getRedisHost(),tableConfig.getRedisPort(),tableConfig.getRedisPassword() );
-
+            }
 
             @Override
             protected void handleInsert(List<CanalEntry.RowData> rowDatasList) {
@@ -68,11 +89,14 @@ public class RedisMessageQueueSink extends AbstractSink {
                 jsonObject.put("event" , "insert") ;
                 jsonObject.put("rowList" , rowList );
                 byte[] bytes = jsonObject.toJSONString().getBytes(Charsets.UTF_8);
-                redisMessageQueue.publish(tableConfig.getTopic() ,bytes );
 
-
+                Message msg = new Message(tableConfig.getTopic() ,  tableConfig.getTableName() ,bytes);
+                try {
+                    producer.send(msg);
+                } catch (Exception e) {
+                    logger.error("Send rocket mq msg fail",e);
+                }
             }
-
 
             @Override
             protected void handleUpdate(List<CanalEntry.RowData> rowDatasList) {
@@ -107,7 +131,12 @@ public class RedisMessageQueueSink extends AbstractSink {
                 jsonObject.put("rowList" , rowList );
                 jsonObject.put("updateColumns" , updateColumns );
                 byte[] bytes = jsonObject.toJSONString().getBytes(Charsets.UTF_8);
-                redisMessageQueue.publish(tableConfig.getTopic() ,bytes );
+                Message msg = new Message(tableConfig.getTopic() , tableConfig.getTableName() ,bytes);
+                try {
+                    producer.send(msg);
+                } catch (Exception e) {
+                    logger.error("Send rocket mq msg fail",e);
+                }
             }
 
             @Override
@@ -132,13 +161,17 @@ public class RedisMessageQueueSink extends AbstractSink {
                 jsonObject.put("event" , "delete") ;
                 jsonObject.put("rowList" , rowList );
                 byte[] bytes = jsonObject.toJSONString().getBytes(Charsets.UTF_8);
-                redisMessageQueue.publish(tableConfig.getTopic() ,bytes );
+                Message msg = new Message(tableConfig.getTopic() , tableConfig.getTableName() ,bytes);
+                try {
+                    producer.send(msg);
+                } catch (Exception e) {
+                    logger.error("Send rocket mq msg fail",e);
+                }
             }
 
             @Override
             public void stop() {
                 super.stop();
-                this.redisMessageQueue.close();
             }
         };
     }

@@ -1,7 +1,6 @@
 package mysql.replication.web;
 
 import com.alibaba.otter.canal.common.utils.JsonUtils;
-import mysql.replication.CoordinatorController;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;

@@ -82,6 +82,7 @@ public class ZookeeperLeaderElector {
             elect();
 
         }
+
     }
 
     private class ZkDataChangeListener implements IZkDataListener {

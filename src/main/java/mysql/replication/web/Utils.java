@@ -1,11 +1,9 @@
 package mysql.replication.web;
 
 import com.alibaba.fastjson.JSONObject;
-import com.github.wens.mq.RedisMessageQueue;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
 import mysql.replication.config.DestinationConfig;
-import mysql.replication.redis.RedisUtils;
 
 import java.sql.*;
 import java.util.Arrays;
@@ -46,9 +44,6 @@ public class Utils {
                     jsonObject.put("event" , "insert") ;
                     jsonObject.put("rowList" , Arrays.asList(row));
                     byte[] bytes = jsonObject.toJSONString().getBytes(Charsets.UTF_8);
-                    RedisMessageQueue redisMessageQueue = RedisUtils.createRedisMessageQueue(tableConfig.getRedisHost(), tableConfig.getRedisPort(),tableConfig.getRedisPassword());
-                    redisMessageQueue.publish( "test_"+tableConfig.getTopic() ,bytes );
-                    redisMessageQueue.close();
                     sb.append(tableConfig.getTableName() + " is  ok\r\n");
                 }
                 resultSet.close();

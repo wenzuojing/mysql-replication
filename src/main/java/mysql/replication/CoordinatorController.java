@@ -54,6 +54,8 @@ public class CoordinatorController implements ZookeeperLeaderElector.LeaderListe
                 }
 
             }
+
+
         });
         this.aliveServerIds = ZookeeperUtils.getChildren(ZkPathUtils.getIdsPath());
         zookeeperLeaderElector.start();

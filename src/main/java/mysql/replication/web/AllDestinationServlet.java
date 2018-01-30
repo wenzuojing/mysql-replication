@@ -3,9 +3,6 @@ package mysql.replication.web;
 import com.alibaba.otter.canal.common.utils.JsonUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import mysql.replication.CoordinatorController;
-import mysql.replication.ZkPathUtils;
-import mysql.replication.ZookeeperUtils;
 import mysql.replication.config.DestinationConfig;
 import mysql.replication.config.DestinationConfigManager;
 
@@ -40,19 +37,9 @@ public class AllDestinationServlet extends HttpServlet {
 
             DestinationConfig config = destinationConfigManager.getDestinationConfig(dest);
 
-            String monitorUrl = "";
-
-            CoordinatorController.ServerInfo serverInfo = ZookeeperUtils.readData(ZkPathUtils.getIdsPath(config.getRunOn()), CoordinatorController.ServerInfo.class);
-            if (serverInfo != null) {
-                monitorUrl = String.format("%s?destination=%s&mysqlAddress=%s&mysqlUser=%s&mysqlPassword=%s", serverInfo.getHttpEndpoint().replace("endpoint", "monitor"), config.getDestination(), config.getDbAddress(), config.getDbUser(), config.getDbPassword());
-            }
-
             HashMap<String, Object> map = Maps.newHashMap();
             map.put("destination", dest);
             map.put("stopped", config.isStopped());
-            map.put("runOn", config.getRunOn());
-            map.put("runFail", config.isRunFail());
-            map.put("monitorUrl", monitorUrl);
             retList.add(map);
         }
         response.getWriter().write(JsonUtils.marshalToString(retList));
