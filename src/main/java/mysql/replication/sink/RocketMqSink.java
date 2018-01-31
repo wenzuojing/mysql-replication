@@ -11,6 +11,7 @@ import mysql.replication.config.DestinationConfig;
 
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
+import org.apache.rocketmq.client.producer.selector.SelectMessageQueueByHash;
 import org.apache.rocketmq.common.message.Message;
 import org.slf4j.Logger;
 
@@ -92,7 +93,7 @@ public class RocketMqSink extends AbstractSink {
 
                 Message msg = new Message(tableConfig.getTopic() ,  tableConfig.getTableName() ,bytes);
                 try {
-                    producer.send(msg);
+                    producer.send(msg, new SelectMessageQueueByHash(), tableConfig.getTableName() );
                 } catch (Exception e) {
                     logger.error("Send rocket mq msg fail",e);
                 }
@@ -133,7 +134,7 @@ public class RocketMqSink extends AbstractSink {
                 byte[] bytes = jsonObject.toJSONString().getBytes(Charsets.UTF_8);
                 Message msg = new Message(tableConfig.getTopic() , tableConfig.getTableName() ,bytes);
                 try {
-                    producer.send(msg);
+                    producer.send(msg, new SelectMessageQueueByHash(), tableConfig.getTableName() );
                 } catch (Exception e) {
                     logger.error("Send rocket mq msg fail",e);
                 }
@@ -163,7 +164,7 @@ public class RocketMqSink extends AbstractSink {
                 byte[] bytes = jsonObject.toJSONString().getBytes(Charsets.UTF_8);
                 Message msg = new Message(tableConfig.getTopic() , tableConfig.getTableName() ,bytes);
                 try {
-                    producer.send(msg);
+                    producer.send(msg, new SelectMessageQueueByHash(), tableConfig.getTableName() );
                 } catch (Exception e) {
                     logger.error("Send rocket mq msg fail",e);
                 }

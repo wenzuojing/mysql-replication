@@ -42,8 +42,6 @@ public class WebConsole {
         context.addServlet(new ServletHolder(new GetConfigServlet(destinationConfigManager)), "/config/get");
         context.addServlet(new ServletHolder(new AllDestinationServlet(destinationConfigManager)), "/destination/all");
         context.addServlet(new ServletHolder(new DestinationOptServlet(coordinatorController)), "/destination/opt");
-        context.addServlet(new ServletHolder(new EndpointServlet(destinationConfigManager, controllerService)), "/endpoint");
-        context.addServlet(new ServletHolder(new AliveServerServlet(coordinatorController)), "/alive/server/ids");
         context.addServlet(new ServletHolder(new MonitorServlet()), "/monitor");
 
         HandlerList handlers = new HandlerList();

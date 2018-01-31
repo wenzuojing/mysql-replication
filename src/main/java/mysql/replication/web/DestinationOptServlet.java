@@ -1,5 +1,6 @@
 package mysql.replication.web;
 
+import mysql.replication.CoordinatorController;
 import mysql.replication.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -16,8 +17,12 @@ public class DestinationOptServlet extends HttpServlet {
 
     private final Logger logger = LoggerFactory.getLogger();
 
+    private CoordinatorController coordinatorController;
 
 
+    public DestinationOptServlet(CoordinatorController coordinatorController) {
+        this.coordinatorController = coordinatorController;
+    }
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -25,12 +30,11 @@ public class DestinationOptServlet extends HttpServlet {
         try {
             String opt = req.getParameter("opt");
             String destination = req.getParameter("destination");
-            String runOn = req.getParameter("runOn");
             if (opt != null && destination != null) {
                 if (opt.equalsIgnoreCase("stop")) {
                     coordinatorController.stopDestination(destination);
                 } else if (opt.equalsIgnoreCase("start")) {
-                    coordinatorController.startDestination(destination, runOn);
+                    coordinatorController.startDestination(destination);
                 } else if (opt.equalsIgnoreCase("delete")) {
                     coordinatorController.deleteDestination(destination);
                 } else {

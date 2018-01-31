@@ -3,6 +3,9 @@ package mysql.replication.web;
 import com.alibaba.otter.canal.common.utils.JsonUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import mysql.replication.CoordinatorController;
+import mysql.replication.ZkPathUtils;
+import mysql.replication.ZookeeperUtils;
 import mysql.replication.config.DestinationConfig;
 import mysql.replication.config.DestinationConfigManager;
 
@@ -36,9 +39,11 @@ public class AllDestinationServlet extends HttpServlet {
         for (String dest : allDestination) {
 
             DestinationConfig config = destinationConfigManager.getDestinationConfig(dest);
+            String monitorUrl = String.format("%s?destination=%s&mysqlAddress=%s&mysqlUser=%s&mysqlPassword=%s","/monitor", config.getDestination(), config.getDbAddress(), config.getDbUser(), config.getDbPassword());;
 
             HashMap<String, Object> map = Maps.newHashMap();
             map.put("destination", dest);
+            map.put("monitorUrl", monitorUrl);
             map.put("stopped", config.isStopped());
             retList.add(map);
         }

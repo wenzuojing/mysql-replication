@@ -22,8 +22,6 @@
     <thead>
     <tr>
         <th>Destination</th>
-        <th>Run On</th>
-        <th>Run Fail</th>
         <th>Monitor</th>
         <th></th>
     </tr>
@@ -44,8 +42,6 @@
 
     var tpl = '<tr>' +
             '<td>#destination</td>' +
-            '<td>#runOn</td>' +
-            '<td>#runFail</td>' +
             '<td><a href="#monitorUrl" target="_blank"> monitor </a></td>' +
             '<td> <button type="button" onclick="edit(\'#destination\')">EDIT</button> <button type="button" onclick="opt(this , \'#destination\')" >DELETE</button> <button type="button" onclick="opt(this , \'#destination\')" >#status</button> </td>' +
             '</tr>'
@@ -56,27 +52,12 @@
 
         if ("START" == opt) {
 
-            $.post("alive/server/ids", {}, function (data) {
-
-                if (data.length == 0) {
-                    alert("Not available server")
-                } else {
-                    var id = prompt("Run on which server ? You can input one of serverId(" + data + ").")
-                    if (data.indexOf(id) != -1) {
-
-                        $.get("destination/opt?opt=" + opt + "&destination=" + destination + "&runOn=" + id, function (data) {
-                            alert(data)
-                            if ("ok" == data) {
-                                document.location.reload()
-                            }
-                        }, "text")
-
-                    } else {
-                        alert("Illegal input.")
-                    }
+            $.post("destination/opt?opt=" + opt + "&destination=" + destination, function (data) {
+                alert(data)
+                if ("ok" == data) {
+                    document.location.reload()
                 }
-
-            }, "json")
+            }, "text")
 
         } else {
             if (!confirm("SURE " + opt)) return
@@ -113,8 +94,6 @@
         $(data).each(function () {
             var status = this.stopped ? "START" : "STOP";
             var html = tpl.replace(/#destination/g, this.destination).
-                    replace("#runOn", !this.runOn ? "N/A" : this.runOn).
-                    replace("#runFail", this.runFail).
                     replace("#status", status).
                     replace("#monitorUrl", this.monitorUrl)
             $("#all-destinations").append($(html))

@@ -1,5 +1,6 @@
 package mysql.replication;
 
+import com.alibaba.fastjson.JSONObject;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.*;
 import org.apache.rocketmq.client.consumer.store.LocalFileOffsetStore;
@@ -9,6 +10,7 @@ import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageExt;
 
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -21,21 +23,24 @@ public class TestMqConsumer {
         consumer.setNamesrvAddr("localhost:9876");
         consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
 
-        consumer.subscribe("myTopic", "*");
-
-
+        consumer.subscribe("course_info", "*");
 
         consumer.registerMessageListener(new MessageListenerOrderly() {
             @Override
             public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs, ConsumeOrderlyContext context) {
 
                 for(MessageExt msg : msgs ){
-                    System.out.println(msg);
+
+
+                    try {
+                        System.out.println(new String(msg.getBody(),"utf-8"));
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
                 }
 
-                context.setSuspendCurrentQueueTimeMillis(10000);
 
-                return ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
+                return ConsumeOrderlyStatus.SUCCESS;
             }
         });
 

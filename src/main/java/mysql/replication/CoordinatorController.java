@@ -1,6 +1,7 @@
 package mysql.replication;
 
 import com.alibaba.otter.canal.common.utils.AddressUtils;
+import mysql.replication.canal.ControllerService;
 import mysql.replication.config.DestinationConfig;
 import mysql.replication.config.DestinationConfigManager;
 import org.I0Itec.zkclient.IZkChildListener;
@@ -10,238 +11,84 @@ import org.slf4j.Logger;
 
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 /**
  * Created by wens on 15/12/5.
  */
-public class CoordinatorController implements ZookeeperLeaderElector.LeaderListener {
+public class CoordinatorController implements Lifecycle {
 
     private final Logger logger = LoggerFactory.getLogger();
 
+    private ControllerService controllerService;
+
     private DestinationConfigManager destinationConfigManager;
 
-    private String myId;
-    private String httpEndpoint;
-    private volatile List<String> aliveServerIds;
 
-    private ZookeeperLeaderElector zookeeperLeaderElector;
-
-    public CoordinatorController(DestinationConfigManager destinationConfigManager, String myId, String httpEndPoint) {
-        zookeeperLeaderElector = new ZookeeperLeaderElector(myId, this);
+    public CoordinatorController(ControllerService controllerService ,DestinationConfigManager destinationConfigManager) {
+        this.controllerService = controllerService;
         this.destinationConfigManager = destinationConfigManager;
-        this.myId = myId;
-        this.httpEndpoint = httpEndPoint;
     }
 
-
-    public void start() {
-
-        final ServerInfo serverInfo = new ServerInfo(myId, AddressUtils.getHostIp(), httpEndpoint, System.currentTimeMillis());
-        ZookeeperUtils.createEphemeral(ZkPathUtils.getIdsPath(myId), serverInfo);
-        ZookeeperUtils.subscribeStateChanges(new IZkStateListener() {
-            @Override
-            public void handleStateChanged(Watcher.Event.KeeperState state) throws Exception {
-                System.out.println("----");
-            }
-
-            @Override
-            public void handleNewSession() throws Exception {
-
-                try {
-                    ZookeeperUtils.createEphemeral(ZkPathUtils.getIdsPath(myId), serverInfo);
-                } catch (Exception e) {
-                    logger.error("Create ephemeral path fail : " + ZkPathUtils.getIdsPath(myId));
-                }
-
-            }
-
-
-        });
-        this.aliveServerIds = ZookeeperUtils.getChildren(ZkPathUtils.getIdsPath());
-        zookeeperLeaderElector.start();
-    }
-
-
-    public void stop() {
-        zookeeperLeaderElector.stop();
-        ZookeeperUtils.delete(ZkPathUtils.getIdsPath(myId));
-    }
-
-    @Override
-    public void onBecomingLeader() {
-        ZookeeperUtils.subscribeChildChanges(ZkPathUtils.getIdsPath(), new ServerChangeListener());
-        this.aliveServerIds = ZookeeperUtils.getChildren(ZkPathUtils.getIdsPath());
-        checkDestination();
-
-    }
 
     public boolean stopDestination(String destination) {
         DestinationConfig destinationConfig = destinationConfigManager.getDestinationConfig(destination);
-        String ret = doStopDestination(destination, destinationConfig);
+        doStopDestination(destination);
         destinationConfig.setStopped(true);
         destinationConfigManager.saveOrUpdate(destinationConfig);
-        return "ok".equals(ret) ? true : false;
+        return true ;
 
     }
 
-    private String doStopDestination(String destination, DestinationConfig destinationConfig) {
-        String ret = "ok";
-        if (aliveServerIds.contains(destinationConfig.getRunOn())) {
-            ServerInfo serverInfo = getServerInfo(destinationConfig.getRunOn());
-            ret = HttpClientUtils.post(serverInfo.getHttpEndpoint(), Tuple.of("cmd", "stop"), Tuple.of("destination", destination));
-        } else {
-            logger.warn("stop destination on {},but {} is not alive.", destinationConfig.getRunOn(), destinationConfig.getRunOn());
-        }
-        return ret;
+    private void doStopDestination(String destination) {
+        controllerService.stopTask(destination);
     }
 
-    public boolean startDestination(String destination, String serverId) {
+    public boolean startDestination(String destination) {
 
         DestinationConfig destinationConfig = destinationConfigManager.getDestinationConfig(destination);
         if (!destinationConfig.isStopped()) {
-            doStopDestination(destination, destinationConfig);
+            doStopDestination(destination);
         }
-
-        String ret = doStartDestination(destination, serverId, destinationConfig);
-        if ("ok".equals(ret)) {
-            destinationConfig.setStopped(false);
-            destinationConfig.setRunFail(false);
-            destinationConfig.setRunOn(serverId);
-        } else {
-            destinationConfig.setStopped(true);
-            destinationConfig.setRunFail(true);
-            destinationConfig.setRunOn(serverId);
-        }
-
+        doStartDestination(destination);
+        destinationConfig.setStopped(false);
         destinationConfigManager.saveOrUpdate(destinationConfig);
-        return "ok".equals(ret) ? true : false;
+        return true ;
 
     }
 
-    private String doStartDestination(String destination, String serverId, DestinationConfig destinationConfig) {
-        String ret = "ok";
-        if (aliveServerIds.contains(serverId)) {
-            ServerInfo serverInfo = getServerInfo(serverId);
-            ret = HttpClientUtils.post(serverInfo.getHttpEndpoint(), Tuple.of("cmd", "start"), Tuple.of("destination", destination));
-        } else {
-            logger.warn("start destination on {},but {} is not alive.", serverId, serverId);
-            throw new RuntimeException("Server " + serverId + " is not alive");
-        }
-        return ret;
+    private void doStartDestination(String destination) {
+        controllerService.startTask(destination);
     }
 
     public void deleteDestination(String destination) {
         DestinationConfig destinationConfig = destinationConfigManager.getDestinationConfig(destination);
-        if (!destinationConfig.isRunFail()) {
-            doStopDestination(destination, destinationConfig);
+        if (!destinationConfig.isStopped()) {
+            doStopDestination(destination);
         }
         destinationConfigManager.delete(destination);
     }
 
-    public List<String> getAliveServerIds() {
-        return aliveServerIds;
-    }
-
-    private class ServerChangeListener implements IZkChildListener {
-
-        @Override
-        public void handleChildChange(String parentPath, List<String> currentChilds) throws Exception {
-            aliveServerIds = currentChilds;
-            checkDestination();
-        }
-
-
-    }
-
-    private void checkDestination() {
-
-        List<DestinationConfig> allDestinationConfig = destinationConfigManager.getAllDestinationConfig();
-
-        for (DestinationConfig destinationConfig : allDestinationConfig) {
-            if (!destinationConfig.isStopped()) {
-                String serverId = destinationConfig.getRunOn();
-                if (!aliveServerIds.contains(destinationConfig.getRunOn())) {
-                    Random random = new Random();
-                    serverId = aliveServerIds.get(random.nextInt(aliveServerIds.size()));
-                }
-                ServerInfo serverInfo = getServerInfo(serverId);
-                boolean fail = invokeEndpointForStart(destinationConfig, serverInfo);
-                destinationConfig.setRunOn(serverInfo.id);
-                destinationConfig.setRunFail(fail);
-                destinationConfigManager.saveOrUpdate(destinationConfig);
+    @Override
+    public void start() {
+        Set<String> all = destinationConfigManager.getAllDestination();
+        for(String dest : all ){
+            DestinationConfig destinationConfig = destinationConfigManager.getDestinationConfig(dest);
+            if(!destinationConfig.isStopped()){
+                doStartDestination(dest);
             }
+
         }
     }
 
-    private boolean invokeEndpointForStart(DestinationConfig destinationConfig, ServerInfo serverInfo) {
-        boolean fail = true;
-        int retry = 0;
-        while (retry <= 2) {
-            try {
-                String ret = HttpClientUtils.post(serverInfo.getHttpEndpoint(), Tuple.of("cmd", "start"), Tuple.of("destination", destinationConfig.getDestination()));
-                if ("ok".equals(ret)) {
-                    fail = false;
-                    break;
-                }
-            } catch (Exception e) {
-                logger.error("Retry " + retry + " Run destination fail : dest=" + destinationConfig.getDestination() + ",serverId = " + serverInfo.getId(), e);
-                retry++;
+    @Override
+    public void stop() {
+        Set<String> all = destinationConfigManager.getAllDestination();
+        for(String dest : all ){
+            DestinationConfig destinationConfig = destinationConfigManager.getDestinationConfig(dest);
+            if(!destinationConfig.isStopped()){
+                doStopDestination(dest);
             }
-        }
-        return fail;
-    }
-
-    public ServerInfo getServerInfo(String id) {
-        return ZookeeperUtils.readData(ZkPathUtils.getIdsPath(id), ServerInfo.class);
-    }
-
-    public static class ServerInfo {
-
-        String id;
-        String host;
-        String httpEndpoint;
-        long timestamp;
-
-        public ServerInfo() {
-        }
-
-        public ServerInfo(String id, String host, String httpEndpoint, long timestamp) {
-            this.id = id;
-            this.host = host;
-            this.httpEndpoint = httpEndpoint;
-            this.timestamp = timestamp;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public String getHost() {
-            return host;
-        }
-
-        public void setHost(String host) {
-            this.host = host;
-        }
-
-        public String getHttpEndpoint() {
-            return httpEndpoint;
-        }
-
-        public void setHttpEndpoint(String httpEndpoint) {
-            this.httpEndpoint = httpEndpoint;
-        }
-
-        public long getTimestamp() {
-            return timestamp;
-        }
-
-        public void setTimestamp(long timestamp) {
-            this.timestamp = timestamp;
         }
     }
 }
