@@ -23,7 +23,7 @@ public class TestMqConsumer {
         consumer.setNamesrvAddr("localhost:9876");
         consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
 
-        consumer.subscribe("course_info", "*");
+        consumer.subscribe("course_class", "*");
 
         consumer.registerMessageListener(new MessageListenerOrderly() {
             @Override
