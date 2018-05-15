@@ -5,6 +5,7 @@ import com.alibaba.otter.canal.protocol.CanalEntry;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import mysql.replication.EmailUtil;
 import mysql.replication.LoggerFactory;
 import mysql.replication.canal.AbstractSink;
 import mysql.replication.config.DestinationConfig;
@@ -41,10 +42,13 @@ public class RocketMqSink extends AbstractSink {
         producer = new DefaultMQProducer("mysql-binlog");
         producer.setNamesrvAddr(this.destinationConfig.getMqNamesrvAddr());
         producer.setRetryTimesWhenSendFailed(10);
+        producer.setSendMsgTimeout(60000);
         try {
             producer.start();
         } catch (MQClientException e) {
+            EmailUtil.sendMail("【MySQL数据复制服务】","RocketMq启动失败");
             throw new RuntimeException("Start rocket mq fail", e );
+
         }
 
     }
@@ -95,7 +99,7 @@ public class RocketMqSink extends AbstractSink {
                 try {
                     producer.send(msg, new SelectMessageQueueByHash(), tableConfig.getTableName() );
                 } catch (Exception e) {
-                    logger.error("Send rocket mq msg fail",e);
+                    handleSendFail(jsonObject, e);
                 }
             }
 
@@ -136,7 +140,7 @@ public class RocketMqSink extends AbstractSink {
                 try {
                     producer.send(msg, new SelectMessageQueueByHash(), tableConfig.getTableName() );
                 } catch (Exception e) {
-                    logger.error("Send rocket mq msg fail",e);
+                    handleSendFail(jsonObject, e);
                 }
             }
 
@@ -166,7 +170,7 @@ public class RocketMqSink extends AbstractSink {
                 try {
                     producer.send(msg, new SelectMessageQueueByHash(), tableConfig.getTableName() );
                 } catch (Exception e) {
-                    logger.error("Send rocket mq msg fail",e);
+                    handleSendFail(jsonObject, e);
                 }
             }
 
@@ -175,6 +179,11 @@ public class RocketMqSink extends AbstractSink {
                 super.stop();
             }
         };
+    }
+
+    private void handleSendFail(JSONObject jsonObject, Exception e) {
+        EmailUtil.sendMail("【MySQL数据复制服务】","发送消息导 RocketMq 失败");
+        logger.error("[Send rocket mq msg fail] data = " + jsonObject.toJSONString(),e);
     }
 
 }

@@ -26,16 +26,18 @@ public class TestMqProducer {
     public static void main(String[] args) throws MQClientException, UnsupportedEncodingException, RemotingException, InterruptedException, MQBrokerException {
 
         //Instantiate with a producer group name.
-        DefaultMQProducer producer = new DefaultMQProducer("example_group_name");
+        DefaultMQProducer producer = new DefaultMQProducer("fdsfdsfsdf");
         producer.setNamesrvAddr("localhost:9876");
         //Launch the instance.
         producer.start();
         String[] tags = new String[] {"TagA", "TagB", "TagC", "TagD", "TagE"};
 
-        Message msg = new Message("myTopic" ,  tags[0] ,"dfdsfsdf".getBytes());
-        SendResult sendResult = producer.send( msg , new SelectMessageQueueByHash(),"myTopic");
+        for(int i = 0 ; i < 100 ;i++ ){
+            Message msg = new Message("topic_1234" ,  "TagA" ,"dfdsfsdf".getBytes());
+            SendResult sendResult = producer.send( msg );
 
-        System.out.println(sendResult);
+            System.out.println(sendResult);
+        }
 
         //server shutdown
         producer.shutdown();
