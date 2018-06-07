@@ -3,7 +3,11 @@ package mysql.replication;
 /**
  * Created by Administrator on 2017/12/11.
  */
-import org.apache.commons.mail.*;
+import okhttp3.*;
+import org.apache.commons.codec.digest.DigestUtils;
+
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -12,23 +16,26 @@ import org.apache.commons.mail.*;
  */
 public class EmailUtil {
 
+    private final static OkHttpClient client = new OkHttpClient.Builder().retryOnConnectionFailure(true).connectTimeout(30 , TimeUnit.SECONDS ).readTimeout(60 ,TimeUnit.SECONDS).build();
 
     public static void sendMail( String subject, String content){
-        ImageHtmlEmail email = new ImageHtmlEmail();
-        email.setHostName("smtp.zy.com");
-        email.setSmtpPort(25);
-        email.setAuthenticator(new DefaultAuthenticator("yuyou_app@zy.com", "Yuyou100"));
-        email.setSSLOnConnect(true);//commons-mail-1.1支持的方法，1.4中使用setSSLOnConnect(true)代替
-        try {
-            email.setFrom("yuyou_app@zy.com");
-            email.setSubject(subject);
-            email.setMsg(content);
-            email.addTo("wenzuojing1@zy.com");
-            email.send();
+        String to = "wenzuojing1@zy.com" ;
+        FormBody formBody = new FormBody.Builder()
+                .add("token", DigestUtils.md5Hex(to + "UEZJQGHAwpTHssfGV"))
+                .add("toAddress", to)
+                .add("subject", subject)
+                .add("content", content)
+                .build();
 
-        } catch (EmailException e) {
+        Request request = new Request.Builder().url("http://10.135.57.159:9099/api/message/sendEmail").post(formBody).build();
+        try {
+            Response response = client.newCall(request).execute();
+            System.out.println(response.body().string());
+        } catch (IOException e) {
             e.printStackTrace();
         }
+
+
     }
 
     public static void main(String[] args) {
