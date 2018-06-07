@@ -42,6 +42,7 @@ public class RocketMqSink extends AbstractSink {
         producer = new DefaultMQProducer("mysql-binlog");
         producer.setNamesrvAddr(this.destinationConfig.getMqNamesrvAddr());
         producer.setRetryTimesWhenSendFailed(10);
+        producer.setRetryTimesWhenSendAsyncFailed(10);
         producer.setSendMsgTimeout(60000);
         try {
             producer.start();
