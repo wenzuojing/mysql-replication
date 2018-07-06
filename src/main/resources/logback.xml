@@ -13,7 +13,7 @@
         <rollingPolicy
                 class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- rollover daily -->
-            <fileNamePattern>logs/%d{yyyy-MM-dd}/mysql-redis-replicate-%d{yyyy-MM-dd}-%i.log.gz</fileNamePattern>
+            <fileNamePattern>logs/%d{yyyy-MM-dd}/mysql-replicate-%d{yyyy-MM-dd}-%i.log.gz</fileNamePattern>
             <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
                 <!-- or whenever the file size reaches 100MB -->
                 <maxFileSize>512MB</maxFileSize>
