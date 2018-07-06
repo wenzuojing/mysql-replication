@@ -97,12 +97,10 @@ public class RocketMqSink extends AbstractSink {
                 byte[] bytes = jsonObject.toJSONString().getBytes(Charsets.UTF_8);
 
                 Message msg = new Message(tableConfig.getTopic() ,  tableConfig.getTableName() ,bytes);
-                try {
-                    producer.send(msg, new SelectMessageQueueByHash(), tableConfig.getTableName() );
-                } catch (Exception e) {
-                    handleSendFail(jsonObject, e);
-                }
+                doSend(jsonObject, msg);
             }
+
+
 
             @Override
             protected void handleUpdate(List<CanalEntry.RowData> rowDatasList) {
@@ -138,11 +136,7 @@ public class RocketMqSink extends AbstractSink {
                 jsonObject.put("updateColumns" , updateColumns );
                 byte[] bytes = jsonObject.toJSONString().getBytes(Charsets.UTF_8);
                 Message msg = new Message(tableConfig.getTopic() , tableConfig.getTableName() ,bytes);
-                try {
-                    producer.send(msg, new SelectMessageQueueByHash(), tableConfig.getTableName() );
-                } catch (Exception e) {
-                    handleSendFail(jsonObject, e);
-                }
+                doSend(jsonObject, msg);
             }
 
             @Override
@@ -168,10 +162,20 @@ public class RocketMqSink extends AbstractSink {
                 jsonObject.put("rowList" , rowList );
                 byte[] bytes = jsonObject.toJSONString().getBytes(Charsets.UTF_8);
                 Message msg = new Message(tableConfig.getTopic() , tableConfig.getTableName() ,bytes);
+                doSend(jsonObject, msg);
+            }
+
+            private void doSend(JSONObject jsonObject, Message msg) {
                 try {
                     producer.send(msg, new SelectMessageQueueByHash(), tableConfig.getTableName() );
                 } catch (Exception e) {
-                    handleSendFail(jsonObject, e);
+                    try{
+                        Thread.sleep(2000);
+                        producer.send(msg, new SelectMessageQueueByHash(), tableConfig.getTableName() );
+                    }catch (Exception e1 ){
+                        handleSendFail(jsonObject, e);
+                    }
+
                 }
             }
 
@@ -181,6 +185,8 @@ public class RocketMqSink extends AbstractSink {
             }
         };
     }
+
+
 
     private void handleSendFail(JSONObject jsonObject, Exception e) {
         EmailUtil.sendMail("【MySQL数据复制服务】","发送消息导 RocketMq 失败");
